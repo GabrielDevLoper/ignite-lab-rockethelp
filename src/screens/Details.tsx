@@ -1,13 +1,19 @@
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
+import { useToast } from 'native-base';
 
-import { VStack, Text } from 'native-base';
+import { VStack, Text, HStack, useTheme, ScrollView, Box } from 'native-base';
 import { useEffect, useState } from 'react';
 import { Header } from '../components/Header';
 import { IOrder } from '../components/Order';
 import { dateFormat } from '../utils/fireStoreDateFormat';
 import { OrderFirestoreDTO } from '../DTOs/OrderFirestoreDTO';
 import { Loading } from '../components/Loading';
+import { CircleWavyCheck, ClipboardText, DesktopTower, Hourglass } from 'phosphor-react-native';
+import { CardDetails } from '../components/CardDetails';
+import { Input } from '../components/Input';
+import { Button } from '../components/Button';
+import { Alert } from 'react-native';
 
 interface RouteParams {
   orderId: string;
@@ -24,9 +30,47 @@ export function Details() {
   const [solution, setSolution] = useState('');
   const [order, setOrder] = useState<OrderDetails>({} as OrderDetails);
 
+  const navigation = useNavigation();
+  const toast = useToast();
+  const { colors } = useTheme();
+
   const route = useRoute();
 
   const { orderId } = route.params as RouteParams;
+
+
+  function handleOrderClose(){
+    if(!solution){
+      return Alert.alert("Solicitação", "Insira a descrição da solicitação")
+    }
+
+    firestore()
+    .collection<OrderFirestoreDTO>('orders')
+    .doc(orderId)
+    .update({
+      status: "closed",
+      solution,
+      closed_at: firestore.FieldValue.serverTimestamp()
+    })
+    .then(() =>{
+      toast.show({
+        placement: "top",
+        render: () => {
+          return <Box bg="emerald.500" px="2" py="2" rounded="sm" mb={5}>
+                  <Text color="white" fontSize="md" fontWeight="bold">Solicitação encerrada com sucesso.</Text>  
+                </Box>;
+        }
+      });
+      //Alert.alert("Solicitação", "Solicitação encerrada com sucesso.");
+      navigation.goBack();
+    })
+    .catch((error) => {
+      console.log(error);
+      Alert.alert("Solicitação", "Não foi possível encerrar a solicitação.")
+    });
+
+    
+  }
 
   useEffect(() => {
     
@@ -60,8 +104,66 @@ export function Details() {
 
   return (
     <VStack flex={1} bg="gray.700" >
-        <Header title='Solicitação'/>
-        <Text color="white">{orderId}</Text>
+        <Box px={6} bg="gray.600">
+          <Header title='Solicitação'/>
+        </Box>
+
+       <HStack bg="gray.500" justifyContent={"center"} p={4}>
+          {
+            order.status === 'closed' 
+            ? 
+            <CircleWavyCheck size={22} color={colors.green[300]}/>
+            :
+            <Hourglass size={22} color={colors.secondary[700]}/>
+          }
+
+          <Text 
+            fontSize="sm"
+            color={order.status === 'closed' ? colors.green[300] : colors.secondary[700]}
+            ml={2}
+            textTransform="uppercase"
+
+          >
+              {order.status === 'closed' ? "finalizado" : "em andamento"}
+          </Text>
+       </HStack>
+
+       <ScrollView mx={5} showsVerticalScrollIndicator={false}>
+        <CardDetails 
+          title="Equipamento" 
+          description={`Patrimônio ${order.patrimony}`}
+          icon={DesktopTower}
+         
+        />
+        <CardDetails 
+          title="Descrição do problema" 
+          description={order.description}
+          icon={ClipboardText}
+          footer={`Registrado em ${order.when}`}
+        />
+        <CardDetails 
+          title="Solução" 
+          icon={CircleWavyCheck}
+          description={order.solution}
+          footer={order.closed && `Encerrado em ${order.closed}`}
+        >
+          {
+            order.status === 'open' &&
+              <Input 
+                placeholder='Insira a solução' 
+                onChangeText={setSolution}
+                h={24}
+                textAlignVertical="top"
+                multiline
+              />
+          }
+         
+        </CardDetails>
+       </ScrollView>
+       {
+        order.status === 'open' &&
+        <Button title="Encerrar solicitação" m={5} onPress={handleOrderClose}></Button>
+       }
     </VStack>
   );
 }
