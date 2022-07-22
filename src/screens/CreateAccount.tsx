@@ -3,6 +3,8 @@ import { Envelope, Key } from 'phosphor-react-native'
 import auth from "@react-native-firebase/auth";
 import { Alert } from "react-native";
 import { useToast } from 'native-base';
+import { Button as ButtonNative } from 'native-base';
+
 
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
@@ -10,35 +12,30 @@ import { useState } from "react";
 
 import Logo from '../assets/logo_primary.svg';
 import { useNavigation } from "@react-navigation/native";
-import { ButtonOutline } from "../components/ButtonOutline";
 
-
-export function SignIn(){
+export function CreateAccount(){
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const toast = useToast();
 
     const navigation = useNavigation();
-
     const { colors } = useTheme();
 
-    function handleSignIn(){
+    function handleCreateAccount(){
         if(!email || !password){
             return Alert.alert("Entrar", "Informe email e senha.");
         }
 
         setIsLoading(true);
 
-        auth().signInWithEmailAndPassword(email, password)
+        auth().createUserWithEmailAndPassword(email, password)
         .then((response) => {
-          const { user } = response;
-
           toast.show({
             placement: "top",
             render: () => {
               return <Box bg="emerald.500" px="2" py="2" rounded="sm" mb={5}>
-                      <Text color="white" fontSize="md" fontWeight="bold">Seja bem vindo! {user.email}</Text>  
+                      <Text color="white" fontSize="md" fontWeight="bold">Conta criada com sucesso.</Text>  
                     </Box>;
             }
           });
@@ -93,15 +90,11 @@ export function SignIn(){
         });
     }
 
-    function handleGoCreateAccount(){
-      navigation.navigate('createAccount');
-    }
-
     return(
         <VStack flex={1} alignItems="center" bg="gray.600" px={8} pt={24}>
             <Logo />
             <Heading color="gray.100" fontSize="xl" mt={6} mb={6}>
-                    Acesse sua conta 
+                    Crie sua conta
             </Heading>
             <Input 
                 mb={4} 
@@ -117,19 +110,11 @@ export function SignIn(){
                 onChangeText={(text) => setPassword(text)}
             />
             <Button 
-                title="Entrar" 
+                title="Cadastrar" 
                 w="full" 
-                onPress={handleSignIn}
+                onPress={handleCreateAccount}
                 isLoading={isLoading}
-                mb={2}
             />
-            <ButtonOutline 
-                title="Criar conta" 
-                w="full" 
-                onPress={handleGoCreateAccount}
-                mb={2}
-            />
-            
         </VStack>
     );
 }

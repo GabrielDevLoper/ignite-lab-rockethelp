@@ -4,19 +4,20 @@ interface ButtonProps extends IButtonProps{
     title: string;
 }
 
-export function Button({title, ...props}: ButtonProps) {
+export function ButtonOutline({title, ...props}: ButtonProps) {
   return (
     <NativeBaseButton 
-        bg="green.700"
+        variant="outline"
         h={14}
         fontSize="sm"
         rounded="sm"
         _pressed={{
             bg: "green.500"
         }}
+        borderColor="green.700"
         {...props}
     >
-        <Heading color="white" fontSize="md">
+        <Heading color="green.700" fontSize="md">
             {title}
         </Heading>
     </NativeBaseButton>
